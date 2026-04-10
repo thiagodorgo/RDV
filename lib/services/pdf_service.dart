@@ -7,7 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/expense.dart';
 import '../models/rdv_report.dart';
-import 'package:printing/printing.dart';
+
 
 class PdfService {
   static final _currency =
