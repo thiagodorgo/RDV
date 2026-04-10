@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/expense.dart';
 import '../models/rdv_report.dart';
+import 'package:printing/printing.dart';
 
 class PdfService {
   static final _currency =
@@ -30,18 +31,30 @@ class PdfService {
     List<Expense> expenses, {
     List<String> photoPaths = const [],
   }) async {
-    final pdf = pw.Document();
+    // Fonte com suporte a Unicode / caracteres portugueses
+    final fontData = await PdfGoogleFonts.notoSansRegular();
+    final fontBoldData = await PdfGoogleFonts.notoSansBold();
+    final baseFont = pw.Font.ttf(fontData);
+    final boldFont = pw.Font.ttf(fontBoldData);
+    final defaultStyle = pw.TextStyle(font: baseFont, fontSize: 9);
+
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
+    );
 
     // Carregar logo da AMP dos assets
     final logoBytes = await rootBundle.load('assets/logo_amp.jpg');
     final logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
 
-    // Carregar imagens dos anexos
+    // Carregar imagens dos anexos — só inclui arquivos que existem
     final List<pw.MemoryImage> photoImages = [];
     for (final path in photoPaths) {
       try {
-        final bytes = await File(path).readAsBytes();
-        photoImages.add(pw.MemoryImage(bytes));
+        final file = File(path);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          photoImages.add(pw.MemoryImage(bytes));
+        }
       } catch (_) {}
     }
 

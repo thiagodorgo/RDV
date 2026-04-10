@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/expense.dart';
 import '../models/rdv_report.dart';
 import 'database_service.dart';
+import 'photo_service.dart';
 
 class ReportProvider extends ChangeNotifier {
   final _db = DatabaseService();
@@ -101,13 +102,16 @@ class ReportProvider extends ChangeNotifier {
   }
 
   // Gerenciamento de fotos para os Anexos
-  void addPhoto(String path) {
-    _photoPaths.add(path);
+  // Copia para diretório permanente antes de guardar o path
+  Future<void> addPhoto(String tempPath) async {
+    final permanentPath = await PhotoService.savePermanently(tempPath);
+    _photoPaths.add(permanentPath);
     notifyListeners();
   }
 
-  void removePhoto(int index) {
+  Future<void> removePhoto(int index) async {
     if (index >= 0 && index < _photoPaths.length) {
+      await PhotoService.deletePhoto(_photoPaths[index]);
       _photoPaths.removeAt(index);
       notifyListeners();
     }

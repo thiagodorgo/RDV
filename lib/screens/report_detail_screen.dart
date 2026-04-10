@@ -115,7 +115,7 @@ class ReportDetailScreen extends StatelessWidget {
                   total: total,
                   onAdd: () => _addExpense(context, cat),
                   onEdit: (e) => _editExpense(context, e),
-                  onDelete: (e) => provider.removeExpense(e.id!),
+                  onDelete: (e) async => await provider.removeExpense(e.id!),
                 );
               }).toList(),
             ),

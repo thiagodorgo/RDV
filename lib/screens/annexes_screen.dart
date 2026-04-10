@@ -102,7 +102,7 @@ class AnnexesScreen extends StatelessWidget {
     if (source == null) return;
     final picked =
         await picker.pickImage(source: source, imageQuality: 90);
-    if (picked != null) provider.addPhoto(picked.path);
+    if (picked != null) await provider.addPhoto(picked.path);
   }
 
   Future<void> _confirmDelete(
@@ -123,7 +123,7 @@ class AnnexesScreen extends StatelessWidget {
         ],
       ),
     );
-    if (confirm == true) provider.removePhoto(index);
+    if (confirm == true) await provider.removePhoto(index);
   }
 
   void _viewPhoto(
