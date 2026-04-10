@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import '../models/expense.dart';
@@ -48,10 +50,11 @@ class ReportDetailScreen extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          // Cabeçalho resumo
-          SliverToBoxAdapter(child: _buildSummaryCard(context, provider, saldo, isDevolver)),
+          SliverToBoxAdapter(
+            child: _buildSummaryCard(context, provider, saldo, isDevolver),
+          ),
 
-          // Categorias de despesas
+          // Despesas
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -64,11 +67,12 @@ class ReportDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Column(
               children: ExpenseCategory.values.map((cat) {
-                final expenses = _expensesByCategory(provider, cat);
+                final expenses = provider.currentExpenses
+                    .where((e) => e.category == cat)
+                    .toList();
                 final total = expenses.fold(0.0, (s, e) => s + e.amount);
                 return ExpenseCategoryTile(
                   category: cat,
@@ -82,6 +86,11 @@ class ReportDetailScreen extends StatelessWidget {
             ),
           ),
 
+          // Anexos (fotos)
+          SliverToBoxAdapter(
+            child: _buildPhotosSection(context, provider),
+          ),
+
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -93,19 +102,12 @@ class ReportDetailScreen extends StatelessWidget {
     );
   }
 
-  List<Expense> _expensesByCategory(ReportProvider p, ExpenseCategory cat) {
-    return p.currentExpenses.where((e) => e.category == cat).toList();
-  }
+  // ── Resumo financeiro ────────────────────────────────────────────────────
 
-  Widget _buildSummaryCard(
-    BuildContext context,
-    ReportProvider provider,
-    double saldo,
-    bool isDevolver,
-  ) {
+  Widget _buildSummaryCard(BuildContext context, ReportProvider provider,
+      double saldo, bool isDevolver) {
     final report = provider.currentReport!;
     final theme = Theme.of(context);
-
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -123,22 +125,22 @@ class ReportDetailScreen extends StatelessWidget {
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 16)),
                       Text(report.role,
-                          style: TextStyle(color: theme.colorScheme.secondary)),
+                          style: TextStyle(
+                              color: theme.colorScheme.secondary)),
                     ],
                   ),
                 ),
                 Chip(
                   label: Text(report.monthYearLabel,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style:
+                          const TextStyle(fontWeight: FontWeight.bold)),
                   backgroundColor: theme.colorScheme.primaryContainer,
-                  labelStyle:
-                      TextStyle(color: theme.colorScheme.onPrimaryContainer),
+                  labelStyle: TextStyle(
+                      color: theme.colorScheme.onPrimaryContainer),
                 ),
               ],
             ),
             const Divider(height: 20),
-
-            // Totais por categoria
             _summaryRow('Combustível', provider.totalCombustivel,
                 Colors.orange, Icons.local_gas_station),
             const SizedBox(height: 4),
@@ -148,8 +150,6 @@ class ReportDetailScreen extends StatelessWidget {
             _summaryRow('Outros', provider.totalOutros, Colors.teal,
                 Icons.receipt_long),
             const Divider(height: 16),
-
-            // Total geral
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -162,7 +162,6 @@ class ReportDetailScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             if (report.advance > 0) ...[
               const SizedBox(height: 8),
               Container(
@@ -172,8 +171,8 @@ class ReportDetailScreen extends StatelessWidget {
                       : Colors.green.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -181,7 +180,8 @@ class ReportDetailScreen extends StatelessWidget {
                       isDevolver ? 'A Devolver' : 'A Receber',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isDevolver ? Colors.red : Colors.green,
+                        color:
+                            isDevolver ? Colors.red : Colors.green,
                       ),
                     ),
                     Text(
@@ -189,14 +189,14 @@ class ReportDetailScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: isDevolver ? Colors.red : Colors.green,
+                        color:
+                            isDevolver ? Colors.red : Colors.green,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-
             const SizedBox(height: 8),
             Text(
               '${report.obra} · ${report.city} · ${report.period}',
@@ -214,13 +214,140 @@ class ReportDetailScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 6),
-        Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 13))),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
         Text(formatCurrency(value),
             style: TextStyle(
                 color: value > 0 ? color : Colors.grey, fontSize: 13)),
       ],
     );
+  }
+
+  // ── Seção de fotos (Anexos) ──────────────────────────────────────────────
+
+  Widget _buildPhotosSection(BuildContext context, ReportProvider provider) {
+    final photos = provider.photoPaths;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                'ANEXOS (${photos.length} foto${photos.length != 1 ? 's' : ''})',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.5,
+                      color: Colors.grey,
+                    ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                icon: const Icon(Icons.add_a_photo, size: 18),
+                label: const Text('Adicionar foto'),
+                onPressed: () => _addPhoto(context),
+              ),
+            ],
+          ),
+        ),
+        if (photos.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Nenhuma foto anexada. As fotos capturadas durante o OCR serão listadas aqui e incluídas no PDF.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.85,
+              ),
+              itemCount: photos.length,
+              itemBuilder: (ctx, i) {
+                return Stack(
+                  children: [
+                    Column(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(photos[i]),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Foto ${i + 1}',
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => provider.removePhoto(i),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.close,
+                              color: Colors.white, size: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ── Ações ────────────────────────────────────────────────────────────────
+
+  Future<void> _addPhoto(BuildContext context) async {
+    final provider = context.read<ReportProvider>();
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Câmera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galeria'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final picked = await picker.pickImage(source: source, imageQuality: 85);
+    if (picked != null) provider.addPhoto(picked.path);
   }
 
   Future<void> _addExpense(
@@ -231,6 +358,7 @@ class ReportDetailScreen extends StatelessWidget {
       builder: (_) => ExpenseFormDialog(
         reportId: provider.currentReport!.id!,
         initialCategory: category,
+        onPhotoCaptured: (path) => provider.addPhoto(path),
       ),
     );
     if (result != null) await provider.addExpense(result);
@@ -244,6 +372,7 @@ class ReportDetailScreen extends StatelessWidget {
         reportId: expense.reportId,
         initialCategory: expense.category,
         existing: expense,
+        onPhotoCaptured: (path) => provider.addPhoto(path),
       ),
     );
     if (result != null) await provider.updateExpense(result);
@@ -253,10 +382,15 @@ class ReportDetailScreen extends StatelessWidget {
     final provider = context.read<ReportProvider>();
     final report = provider.currentReport!;
     final expenses = provider.currentExpenses;
+    final photos = provider.photoPaths;
 
     try {
       final pdfService = PdfService();
-      final file = await pdfService.generateRdvPdf(report, expenses);
+      final file = await pdfService.generateRdvPdf(
+        report,
+        expenses,
+        photoPaths: photos,
+      );
       if (!context.mounted) return;
       await Printing.sharePdf(
         bytes: await file.readAsBytes(),

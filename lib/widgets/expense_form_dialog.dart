@@ -11,12 +11,14 @@ class ExpenseFormDialog extends StatefulWidget {
   final int reportId;
   final ExpenseCategory initialCategory;
   final Expense? existing;
+  final void Function(String path)? onPhotoCaptured;
 
   const ExpenseFormDialog({
     super.key,
     required this.reportId,
     required this.initialCategory,
     this.existing,
+    this.onPhotoCaptured,
   });
 
   @override
@@ -71,6 +73,8 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
   Future<void> _pickAndScan(ImageSource source) async {
     final picked = await _picker.pickImage(source: source, imageQuality: 85);
     if (picked == null) return;
+    // Registra a foto nos Anexos do relatório
+    widget.onPhotoCaptured?.call(picked.path);
     setState(() => _scanning = true);
     try {
       final result = await _ocrService.recognizeReceipt(File(picked.path));

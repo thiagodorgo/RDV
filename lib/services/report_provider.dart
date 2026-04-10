@@ -11,13 +11,18 @@ class ReportProvider extends ChangeNotifier {
   RdvReport? _currentReport;
   bool _loading = false;
 
+  // Caminhos das fotos capturadas no relatório atual (para Anexos no PDF)
+  final List<String> _photoPaths = [];
+
   List<RdvReport> get reports => _reports;
   List<Expense> get currentExpenses => _currentExpenses;
   RdvReport? get currentReport => _currentReport;
   bool get loading => _loading;
+  List<String> get photoPaths => List.unmodifiable(_photoPaths);
 
-  List<Expense> get combustivel =>
-      _currentExpenses.where((e) => e.category == ExpenseCategory.combustivel).toList();
+  List<Expense> get combustivel => _currentExpenses
+      .where((e) => e.category == ExpenseCategory.combustivel)
+      .toList();
   List<Expense> get hotel =>
       _currentExpenses.where((e) => e.category == ExpenseCategory.hotel).toList();
   List<Expense> get outros =>
@@ -39,6 +44,7 @@ class ReportProvider extends ChangeNotifier {
 
   Future<void> selectReport(int id) async {
     _currentReport = await _db.getReport(id);
+    _photoPaths.clear();
     await loadExpenses(id);
     notifyListeners();
   }
@@ -52,6 +58,7 @@ class ReportProvider extends ChangeNotifier {
     final id = await _db.insertReport(report);
     _currentReport = report.copyWith(id: id);
     _currentExpenses = [];
+    _photoPaths.clear();
     await loadReports();
     notifyListeners();
     return id;
@@ -69,6 +76,7 @@ class ReportProvider extends ChangeNotifier {
     if (_currentReport?.id == id) {
       _currentReport = null;
       _currentExpenses = [];
+      _photoPaths.clear();
     }
     await loadReports();
     notifyListeners();
@@ -90,5 +98,18 @@ class ReportProvider extends ChangeNotifier {
     await _db.deleteExpense(id);
     _currentExpenses.removeWhere((e) => e.id == id);
     notifyListeners();
+  }
+
+  // Gerenciamento de fotos para os Anexos
+  void addPhoto(String path) {
+    _photoPaths.add(path);
+    notifyListeners();
+  }
+
+  void removePhoto(int index) {
+    if (index >= 0 && index < _photoPaths.length) {
+      _photoPaths.removeAt(index);
+      notifyListeners();
+    }
   }
 }
