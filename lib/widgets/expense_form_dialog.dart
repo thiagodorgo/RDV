@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
+import '../models/rdv_report.dart';
 import '../services/ocr_service.dart';
 import '../utils/formatters.dart';
 
@@ -78,6 +79,12 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
     setState(() => _scanning = true);
     try {
       final result = await _ocrService.recognizeReceipt(File(picked.path));
+
+      // Categoria inteligente: aplica sugestão do OCR
+      setState(() {
+        _category = _mapHintToCategory(result.categoryHint);
+      });
+
       if (result.establishment != null && _establishmentCtrl.text.isEmpty) {
         _establishmentCtrl.text = result.establishment!;
       }
@@ -91,6 +98,9 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
       }
       if (result.city != null && _cityCtrl.text.isEmpty) {
         _cityCtrl.text = result.city!;
+      }
+      if (result.uf != null) {
+        setState(() => _uf = result.uf!);
       }
     } catch (e) {
       if (mounted) {
@@ -116,6 +126,17 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
         _selectedDate = picked;
         _dateCtrl.text = formatDate(picked);
       });
+    }
+  }
+
+  ExpenseCategory _mapHintToCategory(ExpenseCategoryHint hint) {
+    switch (hint) {
+      case ExpenseCategoryHint.combustivel:
+        return ExpenseCategory.combustivel;
+      case ExpenseCategoryHint.hotel:
+        return ExpenseCategory.hotel;
+      case ExpenseCategoryHint.outros:
+        return ExpenseCategory.outros;
     }
   }
 
