@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart' as share_plus;
 import 'package:open_filex/open_filex.dart';
 import '../models/expense.dart';
 import '../services/report_provider.dart';
@@ -355,11 +355,9 @@ class ReportDetailScreen extends StatelessWidget {
       } else if (action == 'share') {
         final filename =
             'RDV_${report.year}${report.month.toString().padLeft(2, '0')}_${report.employee.replaceAll(' ', '_')}.pdf';
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(file.path, name: filename)],
-            subject: 'RDV $filename',
-          ),
+        await share_plus.Share.shareXFiles(
+          [share_plus.XFile(file.path)],
+          subject: 'RDV $filename',
         );
       }
     } catch (e) {

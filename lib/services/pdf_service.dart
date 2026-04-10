@@ -31,9 +31,11 @@ class PdfService {
     List<Expense> expenses, {
     List<String> photoPaths = const [],
   }) async {
-    // Fonte com suporte a Unicode / caracteres portugueses
-    final baseFont = await PdfGoogleFonts.notoSansRegular();
-    final boldFont = await PdfGoogleFonts.notoSansBold();
+    // Fonte com suporte a Unicode (carregada dos assets do Flutter)
+    final fontRegular = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
+    final fontBold = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
+    final baseFont = pw.Font.ttf(fontRegular);
+    final boldFont = pw.Font.ttf(fontBold);
 
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
