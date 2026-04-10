@@ -32,11 +32,8 @@ class PdfService {
     List<String> photoPaths = const [],
   }) async {
     // Fonte com suporte a Unicode / caracteres portugueses
-    final fontData = await PdfGoogleFonts.notoSansRegular();
-    final fontBoldData = await PdfGoogleFonts.notoSansBold();
-    final baseFont = pw.Font.ttf(fontData);
-    final boldFont = pw.Font.ttf(fontBoldData);
-    final defaultStyle = pw.TextStyle(font: baseFont, fontSize: 9);
+    final baseFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
 
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
