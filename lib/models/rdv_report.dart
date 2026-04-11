@@ -64,17 +64,19 @@ class RdvReport {
   factory RdvReport.fromMap(Map<String, dynamic> map) {
     return RdvReport(
       id: map['id'],
-      employee: map['employee'],
-      role: map['role'],
-      origin: ExpenseOrigin.values[map['origin']],
-      obra: map['obra'],
-      orderNumber: map['order_number'],
-      month: map['month'],
-      year: map['year'],
-      city: map['city'],
-      period: map['period'],
-      advance: map['advance'],
-      createdAt: DateTime.parse(map['created_at']),
+      employee: (map['employee'] as String?) ?? '',
+      role: (map['role'] as String?) ?? '',
+      origin: ExpenseOrigin.values[(map['origin'] as int?) ?? 0],
+      obra: (map['obra'] as String?) ?? '',
+      orderNumber: (map['order_number'] as String?) ?? '',
+      month: (map['month'] as int?) ?? DateTime.now().month,
+      year: (map['year'] as int?) ?? DateTime.now().year,
+      city: (map['city'] as String?) ?? '',
+      period: (map['period'] as String?) ?? '',
+      advance: ((map['advance'] as num?) ?? 0).toDouble(),
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
     );
   }
 
