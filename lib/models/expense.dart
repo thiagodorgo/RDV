@@ -58,15 +58,17 @@ class Expense {
   factory Expense.fromMap(Map<String, dynamic> map) {
     return Expense(
       id: map['id'],
-      reportId: map['report_id'],
-      category: ExpenseCategory.values[map['category']],
-      date: DateTime.parse(map['date']),
-      establishment: map['establishment'],
-      city: map['city'],
-      uf: map['uf'],
-      amount: map['amount'],
-      observations: map['observations'],
-      km: map['km'],
+      reportId: (map['report_id'] as int?) ?? 0,
+      category: ExpenseCategory.values[(map['category'] as int?) ?? 2],
+      date: map['date'] != null
+          ? DateTime.parse(map['date'])
+          : DateTime.now(),
+      establishment: (map['establishment'] as String?) ?? '',
+      city: (map['city'] as String?) ?? '',
+      uf: (map['uf'] as String?) ?? 'PR',
+      amount: ((map['amount'] as num?) ?? 0).toDouble(),
+      observations: map['observations'] as String?,
+      km: map['km'] as String?,
     );
   }
 

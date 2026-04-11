@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -50,10 +51,15 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     ]).animate(_controller);
 
+    // Esconde status bar durante o splash
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+
     _controller.forward();
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
+        // Restaura status bar ao entrar no app
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const HomeScreen(),
