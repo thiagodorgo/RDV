@@ -31,15 +31,8 @@ class PdfService {
     List<Expense> expenses, {
     List<String> photoPaths = const [],
   }) async {
-    // Fonte com suporte a Unicode (carregada dos assets do Flutter)
-    final fontRegular = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
-    final fontBold = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
-    final baseFont = pw.Font.ttf(fontRegular);
-    final boldFont = pw.Font.ttf(fontBold);
-
-    final pdf = pw.Document(
-      theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
-    );
+    // Usa fonte padrão do pacote pdf (Helvetica) — sem dependência externa
+    final pdf = pw.Document();
 
     // Carregar logo da AMP dos assets
     final logoBytes = await rootBundle.load('assets/logo_amp.jpg');
